@@ -16,13 +16,13 @@ export type LoopInfo = any
 export type { Query, QueryBuilder }
 export type Seele = {
   defineComponent: <T = unknown>(ctor?: T | (() => T)) => ComponentID
-  hasComponent: (entityID: EntityID, componentID: ComponentID) => boolean
-  addComponent: (entityID: EntityID, componentID: ComponentID, props?: ComponentProps) => void
-  removeComponent: (entityID: EntityID, componentID: ComponentID) => void
-  hasEntity: (entityID: EntityID) => boolean
+  hasComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID) => boolean
+  addComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID, props?: ComponentProps) => void
+  removeComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID) => void
+  hasEntity: (entityID: EntityID | EntityInstance) => boolean
   defineEntity: (cb?: (archetypeBuilder: ArchetypeBuilder) => void) => Archetype
   createEntity: (maskContainer: ArchetypeBuilder | Archetype, setter?: (entity: EntityInstance) => void) => EntityID
-  removeEntity: (entityID: EntityID) => void
+  removeEntity: (entityID: EntityID | EntityInstance) => void
   defineSystem: (rawSystemCtor: () => RawSystem) => System
   registerSystem: (system: System) => Seele
   defineQuery: (rawQuery: (q: QueryBuilder) => QueryBuilder) => Query
@@ -32,6 +32,10 @@ export type Seele = {
 } & {
   archetypeMag: ArchetypeManager
 } & Looper
+
+function getEntityID(entityID: EntityID | EntityInstance): number {
+  return entityID[ID] ?? entityID
+}
 
 export function Seele(options: LooperOptions = {}): Seele {
   const looper = Looper(options)
@@ -80,6 +84,8 @@ export function Seele(options: LooperOptions = {}): Seele {
   }
 
   function hasEntity(entityID: EntityID) {
+    entityID = getEntityID(entityID)
+
     return entityArchetype[entityID] !== undefined
   }
 
@@ -106,6 +112,7 @@ export function Seele(options: LooperOptions = {}): Seele {
     archetypeMag,
 
     hasComponent(entityID, componentID) {
+      entityID = getEntityID(entityID)
       const archetype = entityArchetype[entityID]
 
       if (archetype === undefined) {
@@ -115,9 +122,10 @@ export function Seele(options: LooperOptions = {}): Seele {
       return archetype.hasComponent(componentID)
     },
 
-    addComponent(entityID, componentID) {
+    addComponent(entityID, componentID, setter) {
+      entityID = getEntityID(entityID)
       if (!hasEntity(entityID)) {
-        error(`[error]-[addComponent]: ${entityID} does not exist.`)
+        error(`[error]-[addComponent]: entity ${entityID} does not exist.`)
 
         return
       }
@@ -125,20 +133,22 @@ export function Seele(options: LooperOptions = {}): Seele {
       const archetype = entityArchetype[entityID]
 
       if (archetype === undefined) {
-        error(`[error]-[addComponent]: ${entityID} does not exist.`)
+        error(`[error]-[addComponent]: entity ${entityID} does not exist.`)
 
         return
       }
 
       if (!archetype.hasComponent(componentID)) {
         const entity = transformEntityForComponent(archetype, entityID, componentID)
-        entity[componentID] = getComponentCtor(componentID)()
+        const component = getComponentCtor(componentID)()
+        entity[componentID] = setter ? setter(component) : component
       }
     },
 
     removeComponent(entityID, componentID) {
+      entityID = getEntityID(entityID)
       if (!hasEntity(entityID)) {
-        error(`[error]-[removeComponent]: ${entityID} does not exist.`)
+        error(`[error]-[removeComponent]: entity ${entityID} does not exist.`)
 
         return
       }
@@ -146,7 +156,7 @@ export function Seele(options: LooperOptions = {}): Seele {
       const archetype = entityArchetype[entityID]
 
       if (archetype === undefined) {
-        error(`[error]-[removeComponent]: ${entityID} does not exist.`)
+        error(`[error]-[removeComponent]: entity ${entityID} does not exist.`)
 
         return
       }
@@ -195,6 +205,7 @@ export function Seele(options: LooperOptions = {}): Seele {
     },
 
     removeEntity(entityID) {
+      entityID = getEntityID(entityID)
       const archetype = entityArchetype[entityID]
 
       if (!archetype) {
