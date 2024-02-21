@@ -37,7 +37,11 @@ function getEntityID(entityID: EntityID | EntityInstance): number {
   return entityID[ID] ?? entityID
 }
 
-export function Seele(options: LooperOptions = {}): Seele {
+type SeeleOptions = {
+  emptyComponentValue?: any
+} & LooperOptions
+
+export function Seele(options: SeeleOptions = {}): Seele {
   const looper = Looper(options)
   const componentIDGen = IDGenerator(1)
   const entityIDGen = IDGenerator(1)
@@ -169,6 +173,11 @@ export function Seele(options: LooperOptions = {}): Seele {
 
     defineComponent<T = unknown>(componentCtor?: T | (() => T)): ComponentID {
       const componentID = componentIDGen.next()
+
+      if (componentCtor === undefined) {
+        componentCtor = options.emptyComponentValue
+      }
+
       const ctor = typeof componentCtor !== 'function' ? () => componentCtor : componentCtor
       instanceMag.register(componentID, ctor)
 
