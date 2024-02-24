@@ -1,6 +1,7 @@
 import { BitSet } from '@/utils/BitSet'
 import { log } from '@logger'
 import { IS_DEV } from '@/env'
+import { ComponentCtor, ComponentID, EntityInstance } from './types'
 
 export type InstanceCreator = {
   create: () => EntityInstance

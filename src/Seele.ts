@@ -5,23 +5,37 @@ import { InstanceManager } from '@/Instance'
 import { System, RawSystem, ENTITY_SYSTEM, ARCHETYPE_SYSTEM } from '@/System'
 import { IS_DEV } from '@/env'
 import { ID } from '@/Components'
-import { QueryManager, Query, QueryBuilder, queryAll, queryNone } from '@/Query'
+import { QueryManager, Query, QueryBuilder } from '@/Query'
 import { Looper, LooperOptions } from '@/Looper'
+import { ComponentID, EntityID, EntityInstance, ComponentInstance } from './types'
+
+export type * from '@/types'
+export type { Query, QueryBuilder }
+
+export type ComponentSetter = (component: ComponentInstance) => void
+export type EntitySetter = (entity: EntityInstance) => void
 
 export { ENTITY_SYSTEM, ARCHETYPE_SYSTEM }
 export { ID }
-export { queryAll, queryNone }
 
-export type LoopInfo = any
-export type { Query, QueryBuilder }
+export type SaveData = {
+  mask: number[]
+  entities: EntityInstance[]
+}
+
+export type ResolvedSaveData = {
+  builder: Pick<ArchetypeBuilder, 'mask'>
+  entities: EntityInstance[]
+}
+
 export type Seele = {
   defineComponent: <T = unknown>(ctor?: T | (() => T)) => ComponentID
   hasComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID) => boolean
-  addComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID, props?: ComponentProps) => void
+  addComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID, setter?: ComponentSetter) => void
   removeComponent: (entityID: EntityID | EntityInstance, componentID: ComponentID) => void
   hasEntity: (entityID: EntityID | EntityInstance) => boolean
   defineEntity: (cb?: (archetypeBuilder: ArchetypeBuilder) => void) => Archetype
-  createEntity: (maskContainer: ArchetypeBuilder | Archetype, setter?: (entity: EntityInstance) => void) => EntityID
+  createEntity: (maskContainer: ArchetypeBuilder | Archetype, setter?: EntitySetter, value?: unknown) => EntityID
   removeEntity: (entityID: EntityID | EntityInstance) => void
   defineSystem: (rawSystemCtor: () => RawSystem) => System
   registerSystem: (system: System) => Seele
@@ -31,7 +45,13 @@ export type Seele = {
   init: () => void
 } & {
   archetypeMag: ArchetypeManager
-} & Looper
+} & {
+  // serialize: (query: Query) => string
+  // deserialize: (str: string) => void
+  save: () => SaveData[]
+  load: (saveData: SaveData[]) => [true, undefined] | [false, unknown]
+}
+& Looper
 
 function getEntityID(entityID: EntityID | EntityInstance): number {
   return entityID[ID] ?? entityID
@@ -112,8 +132,63 @@ export function Seele(options: SeeleOptions = {}): Seele {
     return entity
   }
 
+  function createEntity(maskContainer: Archetype | ArchetypeBuilder, setter?: EntitySetter, value?: unknown) {
+    const entityID = entityIDGen.next()
+
+    // if mask does not exist, create it.
+    // 'archetypeMag.create' it self can get mask
+    const archetype = archetypeMag.create(maskContainer.mask)
+    const entity = archetype.addEntity(entityID, value)
+    entityArchetype[entityID] = archetype
+
+    setter && setter(entity)
+
+    return entityID
+  }
+
   return {
     archetypeMag,
+
+    save() {
+      const saveData: SaveData[] = []
+
+      archetypeMag.traverse(archetype => {
+        saveData.push(archetypeMag.onSerialize(archetype))
+      })
+
+      return saveData
+    },
+
+    load(saveData: SaveData[]) {
+      try {
+        saveData.forEach(data => {
+          const { builder, entities } = archetypeMag.onDeserialize(data)
+          entities.forEach(entity => {
+            createEntity(builder as ArchetypeBuilder, undefined, entity)
+          })
+        })
+
+        if (inited) {
+          archetypeMag.traverse(tryAddArchetypeToQueries)
+        }
+
+        return [true, undefined]
+      } catch(err) {
+        console.error('[seele] load saveData failed', err)
+
+        return [false, err]
+      }
+    },
+
+    // serialize(query: Query) {
+    //   return archetypeMag.serialize(query.archetypes)
+    // },
+
+    // deserialize(data: string) {
+    //   const query = JSON.parse(data) as Query
+
+    //   query.archetypes
+    // },
 
     hasComponent(entityID, componentID) {
       entityID = getEntityID(entityID)
@@ -199,19 +274,7 @@ export function Seele(options: SeeleOptions = {}): Seele {
       return archetype
     },
 
-    createEntity(maskContainer, setter) {
-      const entityID = entityIDGen.next()
-
-      // if mask does not exist, create it.
-      // 'archetypeMag.create' it self can get mask
-      const archetype = archetypeMag.create(maskContainer.mask)
-      const entity = archetype.addEntity(entityID)
-      entityArchetype[entityID] = archetype
-
-      setter && setter(entity)
-
-      return entityID
-    },
+    createEntity,
 
     removeEntity(entityID) {
       entityID = getEntityID(entityID)

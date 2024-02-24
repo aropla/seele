@@ -3,9 +3,6 @@ import { isFunction } from '@/utils'
 import type { BitSet } from '@/utils/BitSet'
 import type { Archetype } from '@/Archetype'
 
-export const queryAll = (q: QueryBuilder) => q.custom(() => true)
-export const queryNone = (q: QueryBuilder) => q.custom(() => false)
-
 export type RawQuery = (q: QueryBuilder) => QueryBuilder
 
 export type QueryMatcher = (mask: BitSet, archetype: Archetype) => boolean
@@ -17,6 +14,8 @@ export type QueryBuilder = {
   not: (...components: number[]) => QueryBuilder
   none: (...components: number[]) => QueryBuilder
   entity: (archetype: Archetype) => QueryBuilder
+  all: () => QueryBuilder
+  empty: () => QueryBuilder
   custom: (matcher: QueryMatcher) => QueryBuilder
 }
 export type Query = {
@@ -93,6 +92,16 @@ function QueryBuilder(): QueryBuilder {
     },
     entity(archetype) {
       matchers.push((other: BitSet) => other.contains(archetype.mask))
+
+      return this
+    },
+    all() {
+      matchers.push(() => true)
+
+      return this
+    },
+    empty() {
+      matchers.push(() => false)
 
       return this
     },

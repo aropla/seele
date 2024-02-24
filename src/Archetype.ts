@@ -1,7 +1,9 @@
-import { BitSet } from '@/utils/BitSet'
+import { BitSet, Mask } from '@/utils/BitSet'
 import { InstanceManager, InstanceCreator } from '@/Instance'
 import { SparseSet } from '@/utils/SparseSet'
 import { ID } from '@/Components'
+import { ArchetypeID, ComponentID, ComponentProps, EntityID, EntityInstance } from './types'
+import { ResolvedSaveData, SaveData } from '.'
 
 export type Archetype = {
   id: string
@@ -98,6 +100,8 @@ export type ArchetypeManager = {
   create: (mask: BitSet, archetypeID?: ArchetypeID) => Archetype
   transform: (archetype: Archetype, componentID: ComponentID) => Archetype
   traverse: (fn: (archetype: Archetype) => void) => void
+  onSerialize: (archetype: Archetype) => SaveData
+  onDeserialize: (saveData: SaveData) => ResolvedSaveData
 }
 
 export function ArchetypeManager(instanceMag: InstanceManager): ArchetypeManager {
@@ -141,6 +145,22 @@ export function ArchetypeManager(instanceMag: InstanceManager): ArchetypeManager
     traverse(fn) {
       for (const [, archetype] of archetypeMap) {
         fn(archetype)
+      }
+    },
+    onSerialize(archetype: Archetype) {
+      return {
+        mask: archetype.mask.values(),
+        entities: archetype.entities,
+      }
+    },
+    onDeserialize(saveData: SaveData) {
+      const mask = Mask(saveData.mask)
+
+      return {
+        builder: {
+          mask,
+        },
+        entities: saveData.entities,
       }
     },
   }

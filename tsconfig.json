@@ -20,7 +20,8 @@
     "noFallthroughCasesInSwitch": true,
 
     "types": [
-      "vitest/globals"
+      "vitest/globals",
+      "../@repo/global.d.ts"
     ],
     "paths": {
       "@/*": ["./src/*"],

@@ -1,5 +1,6 @@
 import { Archetype } from '@/Archetype'
 import { Seele, ARCHETYPE_SYSTEM } from '@/index'
+import { EntityInstance } from '@/types'
 
 const traverse = (obj: EntityInstance[] | Archetype[], fn: Fn) => {
   for (let i = obj.length - 1; i >= 0; i--) {

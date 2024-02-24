@@ -27,14 +27,14 @@ export function isPrimitive(value: unknown) {
   return type !== 'function' && type !== 'object'
 }
 
-export function isFunction(value: unknown) {
+export function isFunction(value: unknown): value is Fn {
   return typeof value === 'function'
 }
 
-export function isObject(value: unknown) {
+export function isObject(value: unknown): value is object {
   return typeof value === 'object' && !Array.isArray(value)
 }
 
-export function isNumber(value: unknown) {
+export function isNumber(value: unknown): value is number {
   return typeof value === 'number'
 }

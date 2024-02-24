@@ -1,5 +1,6 @@
 import { Query, RawQuery, QueryManager } from '@/Query'
 import { Archetype } from '@/Archetype'
+import { EntityInstance } from './types'
 
 type ENTITY_SYSTEM = 0
 type ARCHETYPE_SYSTEM = 1
