@@ -75,8 +75,8 @@ export type Render = (interp: number) => void
 export type Update = (delta: number) => void
 
 export interface Looper {
-  fps: number
-  running: boolean
+  getFps: () => number
+  isRunning: () => boolean
   setOptions: (options: LooperOptions) => void
   resetFrameDelta: () => number
   setBeforeUpdate: (fn: BeforeUpdate) => Looper
@@ -146,11 +146,11 @@ export function Looper(rawOptions: LooperOptions = {}): Looper {
   }
 
   return {
-    get fps() {
-      return fpsWatcher.fps
-    },
-    get running() {
+    isRunning() {
       return running
+    },
+    getFps() {
+      return fpsWatcher.fps
     },
     setOptions(newOptions) {
       options = normalizeOptions(newOptions, options)
