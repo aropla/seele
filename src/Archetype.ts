@@ -12,6 +12,7 @@ export type Archetype = {
   added: EntityInstance[]
   removed: EntityInstance[]
   inited: boolean
+  size: number
   addEntity: (entityID: EntityID, entity?: EntityInstance) => EntityInstance
   removeEntity: (entityID: EntityID) => EntityInstance
   hasEntity: Set<number>['has']
@@ -36,6 +37,9 @@ export function Archetype(id: string, mask: BitSet, creator: InstanceCreator): A
     added,
     removed,
     inited,
+    get size() {
+      return entities.length
+    },
     hasEntity: entitySet.has,
     hasComponent(componentID: ComponentID) {
       return mask.has(componentID)

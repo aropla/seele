@@ -21,6 +21,7 @@ export type QueryBuilder = {
 export type Query = {
   archetypes: Archetype[]
   tryAdd: (archetype: Archetype) => boolean
+  size: number
 }
 
 function makeAndMatcher(matcher: QueryMatcher, matchers: QueryMatcher[]): QueryMatcher {
@@ -121,6 +122,12 @@ function toQuery(queryBuilder: QueryBuilder): Query {
 
   return {
     archetypes,
+    get size() {
+      let size = 0
+      archetypes.forEach(archetype => size += archetype.size)
+
+      return size
+    },
     tryAdd(archetype: Archetype) {
       if (!matcher(archetype.mask, archetype)) {
         return false
