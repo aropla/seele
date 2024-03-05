@@ -22,6 +22,7 @@ export type Query = {
   archetypes: Archetype[]
   tryAdd: (archetype: Archetype) => boolean
   size: number
+  getEntities: <T = unknown>() => T[]
 }
 
 function makeAndMatcher(matcher: QueryMatcher, matchers: QueryMatcher[]): QueryMatcher {
@@ -136,7 +137,16 @@ function toQuery(queryBuilder: QueryBuilder): Query {
       archetypes.push(archetype)
 
       return true
-    }
+    },
+    getEntities<T = unknown>() {
+      let entities: T[] = []
+
+      archetypes.forEach(archetype => {
+        entities = entities.concat(archetype.entities)
+      })
+
+      return entities
+    },
   }
 }
 
