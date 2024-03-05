@@ -160,6 +160,10 @@ export function Seele(options: SeeleOptions = {}): Seele {
     },
 
     load(saveData: SaveData[]) {
+      if (!Array.isArray(saveData)) {
+        saveData = []
+      }
+
       try {
         saveData.forEach(data => {
           const { builder, entities } = archetypeMag.onDeserialize(data)
