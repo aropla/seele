@@ -2,7 +2,7 @@ import { BitSet, Mask } from '@/utils/BitSet'
 import { InstanceManager, InstanceCreator } from '@/Instance'
 import { SparseSet } from '@/utils/SparseSet'
 import { ID } from '@/Components'
-import { ArchetypeID, ComponentID, ComponentProps, EntityID, EntityInstance } from './types'
+import { ArchetypeID, ComponentID, EntityID, EntityInstance } from './types'
 import { ResolvedSaveData, SaveData } from '.'
 
 export type Archetype = {
@@ -82,7 +82,9 @@ export function Archetype(id: string, mask: BitSet, creator: InstanceCreator): A
 
 export type ArchetypeBuilder = {
   mask: BitSet
-  addComponent: (component: ComponentID, props?: ComponentProps) => ArchetypeBuilder
+  addComponent: (component: ComponentID) => ArchetypeBuilder
+  removeComponent: (component: ComponentID) => ArchetypeBuilder
+  addEntity: (archetype: Archetype) => ArchetypeBuilder
 }
 
 export function ArchetypeBuilder(): ArchetypeBuilder {
@@ -92,6 +94,22 @@ export function ArchetypeBuilder(): ArchetypeBuilder {
     mask,
     addComponent(componentID) {
       mask.or(componentID)
+
+      return this
+    },
+    removeComponent(componentID) {
+      if (mask.has(componentID)) {
+        mask.xor(componentID)
+      }
+
+      return this
+    },
+    addEntity(archetype: Archetype) {
+      const componentIDs = archetype.mask.values()
+
+      componentIDs.forEach(componentID => {
+        mask.or(componentID)
+      })
 
       return this
     },
