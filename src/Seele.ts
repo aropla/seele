@@ -1,3 +1,5 @@
+import { Mask } from '@/utils/BitSet'
+import { BitSet } from './utils/BitSet'
 import { IDGenerator, isNumber } from '@/utils'
 import { log, error } from '@logger'
 import { Archetype, ArchetypeManager, ArchetypeBuilder } from '@/Archetype'
@@ -14,6 +16,8 @@ export type { Query, QueryBuilder }
 
 export type ComponentSetter = (component: ComponentInstance) => void
 export type EntitySetter = (entity: EntityInstance) => void
+
+export { BitSet, Mask }
 
 export { ENTITY_SYSTEM, ARCHETYPE_SYSTEM }
 export { ID }
